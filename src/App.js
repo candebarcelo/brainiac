@@ -2,6 +2,8 @@ import React, {Component} from 'react';
 import Particles from 'react-tsparticles';
 import Clarifai from 'clarifai';
 import Navigation from './components/Navigation/Navigation';
+import Signin from './components/Signin/Signin';
+import Register from './components/Register/Register';
 import Logo from './components/Logo/Logo';
 import Rank from './components/Rank/Rank';
 import ImageLinkForm from './components/ImageLinkForm/ImageLinkForm';
@@ -59,7 +61,7 @@ const particlesOptions = { // config for the react-particles-js package
       width: 1
     },
     collisions: {
-      enable: true
+      enable: false
     },
     move: {
       direction: "none",
@@ -84,7 +86,7 @@ const particlesOptions = { // config for the react-particles-js package
     },
     size: {
       random: true,
-      value: 5
+      value: 3
     }
   },
   detectRetina: true
@@ -96,55 +98,88 @@ class App extends Component {
     this.state = {
       input: '',
       imageUrl: '',
+      box: {},
+      route: 'signin', /* route keeps track of where we are in the page */
+      isSignedIn: false,
     }
   }
 
+  calculateFaceLocation = (data) => {
+    const clarifaiFace = data.outputs[0].data.regions[0].region_info.bounding_box;
+    const image = document.getElementById('inputimage');
+    const width = Number(image.width);
+    const height = Number(image.height);
+    return {
+      leftCol: clarifaiFace.left_col * width,
+      topRow: clarifaiFace.top_row * height,
+      rightCol: width - (clarifaiFace.right_col * width),
+      bottomRow: height - (clarifaiFace.bottom_row * height),
+    }
+  }
+
+  displayFaceBox = (box) => {
+    this.setState({box: box})
+  }
+
   onInputChange = (event) => {
-    // console.log('oninputchange1 input', this.state.input);
-    // console.log('oninputchange1 url', this.state.imageUrl);
     this.setState({input: event.target.value});
-    // console.log('oninputchange2 inp', this.state.input);
-    // console.log('oninputchange2 url', this.state.imageUrl);
   }
 
   onButtonSubmit = () => {
-    // console.log('onbuttonsubmit1 inp', this.state.input);
-    // console.log('onbuttonsubmit1 url', this.state.imageUrl);
-    this.setState({imageUrl: this.state.input})
-
-    // console.log('onbuttonsubmit1 inp', this.state.input);
-    // console.log('onbuttonsubmit1 url', this.state.imageUrl);
+    this.setState({imageUrl: input})
 
     app.models.predict(
         'a403429f2ddf4b49b307e318f00e528b', 
-        this.state.input) /* it seems like it'd be easier to just change imageUrl here, but that would 
+        input) /* it seems like it'd be easier to just change imageUrl here, but that would 
                               cause a 400 error (bad request) */
-      .then(
-      function(response) {
-        console.log(response.outputs[0].data.regions[0].region_info.bounding_box);
-      }, 
-      function(err) {
-        console.log('error', err)
-      }
-    );
+      .then(response => 
+        this.displayFaceBox(this.calculateFaceLocation(response)))
+        .catch(err => console.log('error', err));
+  }
+
+  onRouteChange = (route) => {
+    if (route === 'signout') {
+      this.setState({isSignedIn: false})
+    } else if (route === 'home') {
+      this.setState({isSignedIn: true})
+    }
+    this.setState({route: route});
   }
 
   render() {
+    const { isSignedIn, imageUrl, route, box } = this.state;
     return ( 
       <div className="App">
         <Particles
           id="tsparticles" className='particles'
           options={particlesOptions}
           /> {/* this is from the react-particles-js package */}
-        <Navigation />
-        <Logo />
-        <Rank />
-        <ImageLinkForm 
-          onInputChange={this.onInputChange} 
-          onButtonSubmit={this.onButtonSubmit} /> {/* we need the this to access that function 
+        <Navigation isSignedIn={isSignedIn} onRouteChange={this.onRouteChange} />
+        { route === 'home' /* ternary if */
+          ? <div>
+            <Logo />
+            <Rank />
+            <ImageLinkForm 
+              onInputChange={this.onInputChange} 
+              onButtonSubmit={this.onButtonSubmit} /> {/* we need the this to access that function 
                                                                   which is a method of the App class  */}
-        <FaceRecognition imageUrl={this.state.imageUrl} />
-      </div>
+            <FaceRecognition box={box} imageUrl={imageUrl} /> {/* the way this works is, 
+                                                      here in the App.js container u define these props for
+                                                      its children, so u will pass them to the children as 
+                                                      props, so they'll be able to access them and use them
+                                                      within their own code. they receive them as sort of 
+                                                      parameters in their function, which they can access 
+                                                      with props.box or props.imageUrl unless they 
+                                                      destructure them like ({box, imageUrl}) so then they 
+                                                      can use them like box or imageUrl. */} 
+            </div>
+          : ( /* nested ternary */
+            route === 'register'
+            ? <Register onRouteChange={this.onRouteChange} />
+            : <Signin onRouteChange={this.onRouteChange} />
+          )
+        }
+      </div>    
     );
   }
 }
