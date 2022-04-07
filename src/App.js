@@ -68,7 +68,7 @@ const particlesOptions = { // config for the react-particles-js package
       enable: true,
       outMode: "bounce",
       random: false,
-      speed: 3,
+      speed: 1,
       straight: false
     },
     number: {
@@ -86,7 +86,7 @@ const particlesOptions = { // config for the react-particles-js package
     },
     size: {
       random: true,
-      value: 3
+      value: 2
     }
   },
   detectRetina: true
@@ -101,7 +101,24 @@ class App extends Component {
       box: {},
       route: 'signin', /* route keeps track of where we are in the page */
       isSignedIn: false,
+      user: {
+        id: '',
+        name: '',
+        email: '',
+        entries: 0,
+        joined: ''
+      }
     }
+  }
+
+  loadUser = (data) => {
+    this.setState({user: {
+      id: data.id,
+      name: data.name,
+      email: data.email,
+      entries: data.entries,
+      joined: data.joined
+    }})
   }
 
   calculateFaceLocation = (data) => {
@@ -125,16 +142,34 @@ class App extends Component {
     this.setState({input: event.target.value});
   }
 
-  onButtonSubmit = () => {
-    this.setState({imageUrl: input})
+  onPictureSubmit = () => {
+    this.setState({imageUrl: this.state.input})
 
     app.models.predict(
         'a403429f2ddf4b49b307e318f00e528b', 
-        input) /* it seems like it'd be easier to just change imageUrl here, but that would 
+        this.state.input) /* it seems like it'd be easier to just change imageUrl here, but that would 
                               cause a 400 error (bad request) */
-      .then(response => 
-        this.displayFaceBox(this.calculateFaceLocation(response)))
-        .catch(err => console.log('error', err));
+      .then(response => {
+        if (response) {
+          fetch('http://localhost:3000/image', {
+            method: 'put', 
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                id: this.state.user.id
+            })
+          })
+            .then(response => response.json())
+            .then(count => { // this is to update the number of entries after submitting a picture
+              this.setState(Object.assign(this.state.user, { entries: count })) /* we only want to reassign 
+                                                    the value of the entries for that user, not the whole 
+                                                    user. so to do that, we use Object.assign() which takes 
+                                                    as parameters: 1st, what state u want to update, and 
+                                                    2nd, its new key and value. */
+            })
+        }
+        this.displayFaceBox(this.calculateFaceLocation(response))
+      .catch(err => console.log('error', err));
+      })
   }
 
   onRouteChange = (route) => {
@@ -147,7 +182,7 @@ class App extends Component {
   }
 
   render() {
-    const { isSignedIn, imageUrl, route, box } = this.state;
+    const { isSignedIn, imageUrl, route, box, user } = this.state;
     return ( 
       <div className="App">
         <Particles
@@ -158,10 +193,10 @@ class App extends Component {
         { route === 'home' /* ternary if */
           ? <div>
             <Logo />
-            <Rank />
+            <Rank name={user.name} entries={user.entries} />
             <ImageLinkForm 
               onInputChange={this.onInputChange} 
-              onButtonSubmit={this.onButtonSubmit} /> {/* we need the this to access that function 
+              onPictureSubmit={this.onPictureSubmit} /> {/* we need the this to access that function 
                                                                   which is a method of the App class  */}
             <FaceRecognition box={box} imageUrl={imageUrl} /> {/* the way this works is, 
                                                       here in the App.js container u define these props for
@@ -175,8 +210,8 @@ class App extends Component {
             </div>
           : ( /* nested ternary */
             route === 'register'
-            ? <Register onRouteChange={this.onRouteChange} />
-            : <Signin onRouteChange={this.onRouteChange} />
+            ? <Register loadUser={this.loadUser} onRouteChange={this.onRouteChange} />
+            : <Signin loadUser={this.loadUser} onRouteChange={this.onRouteChange} />
           )
         }
       </div>    
