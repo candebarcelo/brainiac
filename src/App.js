@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import Particles from 'react-tsparticles';
-// import Clarifai from 'clarifai';
+import Clarifai from 'clarifai';
 import Navigation from './components/Navigation/Navigation';
 import Signin from './components/Signin/Signin';
 import Register from './components/Register/Register';
@@ -10,9 +10,9 @@ import ImageLinkForm from './components/ImageLinkForm/ImageLinkForm';
 import FaceRecognition from './components/FaceRecognition/FaceRecognition.js';
 import './App.css';
 
-// const app = new Clarifai.App({
-//   apiKey: 'a2e8b2c805844ee28aa6be45406595fb',
-// });
+const app = new Clarifai.App({
+  apiKey: 'a2e8b2c805844ee28aa6be45406595fb'
+});
 
 const particlesOptions = { // config for the react-particles-js package
   background: {
@@ -143,33 +143,33 @@ class App extends Component {
   }
 
   onPictureSubmit = () => {
-    this.setState({imageUrl: this.state.input}) 
+    this.setState({imageUrl: this.state.input}); 
 
-    // app.models.predict( // THIS PART IS BREAKING THE APP
-    //     'a403429f2ddf4b49b307e318f00e528b', // a403429f2ddf4b49b307e318f00e528b
-    //     this.state.input) /* it seems like it'd be easier to just change imageUrl here, but that would 
-    //                          cause a 400 error (bad request) */
-    //   .then(response => {
-    //     if (response) {
-    //       fetch('http://localhost:3000/image', {
-    //         method: 'put', 
-    //         headers: {'Content-Type': 'application/json'},
-    //         body: JSON.stringify({
-    //             id: this.state.user.id
-    //         })
-    //       })
-    //         .then(response => response.json())
-    //         .then(count => { // this is to update the number of entries after submitting a picture
-    //           this.setState(Object.assign(this.state.user, { entries: count })) /* we only want to reassign 
-    //                                                 the value of the entries for that user, not the whole 
-    //                                                 user. so to do that, we use Object.assign() which takes 
-    //                                                 as parameters: 1st, what state u want to update, and 
-    //                                                 2nd, its new key and value. */
-    //         })
-    //     }
-    //     this.displayFaceBox(this.calculateFaceLocation(response))
-    //   })
-    //   .catch(err => console.log('error', err));
+    app.models.predict( // THIS PART IS BREAKING THE APP
+        'a403429f2ddf4b49b307e318f00e528b', // a403429f2ddf4b49b307e318f00e528b
+        this.state.input) /* it seems like it'd be easier to just change imageUrl here, but that would 
+                             cause a 400 error (bad request) */
+      .then(response => {
+        if (response) {
+          fetch('http://localhost:3000/image', {
+            method: 'put', 
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                id: this.state.user.id
+            })
+          })
+            .then(response => response.json())
+            .then(count => { // this is to update the number of entries after submitting a picture
+              this.setState(Object.assign(this.state.user, { entries: count })) /* we only want to reassign 
+                                                    the value of the entries for that user, not the whole 
+                                                    user. so to do that, we use Object.assign() which takes 
+                                                    as parameters: 1st, what state u want to update, and 
+                                                    2nd, its new key and value. */
+            })
+        }
+        this.displayFaceBox(this.calculateFaceLocation(response))
+      })
+      .catch(err => console.log('error', err));
   }
 
   onRouteChange = (route) => {
