@@ -1,6 +1,5 @@
 import React, {Component} from 'react';
 import Particles from 'react-tsparticles';
-import Clarifai from 'clarifai';
 import Navigation from './components/Navigation/Navigation';
 import Signin from './components/Signin/Signin';
 import Register from './components/Register/Register';
@@ -10,9 +9,6 @@ import ImageLinkForm from './components/ImageLinkForm/ImageLinkForm';
 import FaceRecognition from './components/FaceRecognition/FaceRecognition.js';
 import './App.css';
 
-const app = new Clarifai.App({
-  apiKey: 'a2e8b2c805844ee28aa6be45406595fb'
-});
 
 const particlesOptions = { // config for the react-particles-js package
   background: {
@@ -92,23 +88,25 @@ const particlesOptions = { // config for the react-particles-js package
   detectRetina: true
 }
 
+const initialState = {
+  input: '',
+  imageUrl: '',
+  box: {},
+  route: 'signin', /* route keeps track of where we are in the page */
+  isSignedIn: false,
+  user: {
+    id: '',
+    name: '',
+    email: '',
+    entries: 0,
+    joined: ''
+  }
+}
+
 class App extends Component {
   constructor() {
     super();
-    this.state = {
-      input: '',
-      imageUrl: '',
-      box: {},
-      route: 'signin', /* route keeps track of where we are in the page */
-      isSignedIn: false,
-      user: {
-        id: '',
-        name: '',
-        email: '',
-        entries: 0,
-        joined: ''
-      }
-    }
+    this.state = initialState;
   }
 
   loadUser = (data) => {
@@ -144,11 +142,14 @@ class App extends Component {
 
   onPictureSubmit = () => {
     this.setState({imageUrl: this.state.input}); 
-
-    app.models.predict( // THIS PART IS BREAKING THE APP
-        'a403429f2ddf4b49b307e318f00e528b', // a403429f2ddf4b49b307e318f00e528b
-        this.state.input) /* it seems like it'd be easier to just change imageUrl here, but that would 
-                             cause a 400 error (bad request) */
+      fetch('http://localhost:3000/imageurl', {
+        method: 'post', 
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            input: this.state.input
+        })
+      })
+      .then(response => response.json())
       .then(response => {
         if (response) {
           fetch('http://localhost:3000/image', {
@@ -166,6 +167,7 @@ class App extends Component {
                                                     as parameters: 1st, what state u want to update, and 
                                                     2nd, its new key and value. */
             })
+            .catch(console.log)
         }
         this.displayFaceBox(this.calculateFaceLocation(response))
       })
@@ -174,7 +176,7 @@ class App extends Component {
 
   onRouteChange = (route) => {
     if (route === 'signout') {
-      this.setState({isSignedIn: false})
+      this.setState(initialState)
     } else if (route === 'home') {
       this.setState({isSignedIn: true})
     }
@@ -212,7 +214,8 @@ class App extends Component {
             route === 'register'
             ? <Register loadUser={this.loadUser} onRouteChange={this.onRouteChange} />
             : <Signin loadUser={this.loadUser} onRouteChange={this.onRouteChange} />
-          )
+          ) /* we could make a form component to use on register and signin, bc we did a lot of copy and 
+              pasting, so as to make them smaller */
         } 
       </div>    
     );
