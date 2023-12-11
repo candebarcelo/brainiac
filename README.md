@@ -1,6 +1,6 @@
 # Brainiac web app
 
-https://brainiac-face-recognition-app.herokuapp.com/
+https://brainiac-face-detection.netlify.app/
 
 ## How to use
 
