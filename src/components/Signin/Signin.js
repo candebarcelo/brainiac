@@ -18,7 +18,7 @@ class Signin extends React.Component {
     }
 
     onSubmitSignIn = () => {
-        fetch('https://limitless-fjord-45877.herokuapp.com/signin', { // fetch from our backend API
+        fetch('https://brainiac-backend.adaptable.app/signin', { // fetch from our backend API
             method: 'post', 
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({

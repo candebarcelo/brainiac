@@ -91,7 +91,7 @@ const particlesOptions = { // config for the react-particles-js package
 const initialState = {
   input: '',
   imageUrl: '',
-  box: {},
+  boxes: [{}],
   route: 'signin', /* route keeps track of where we are in the page */
   isSignedIn: false,
   user: {
@@ -120,20 +120,26 @@ class App extends Component {
   }
 
   calculateFaceLocation = (data) => {
-    const clarifaiFace = data.outputs[0].data.regions[0].region_info.bounding_box;
     const image = document.getElementById('inputimage');
-    const width = Number(image.width);
-    const height = Number(image.height);
-    return {
-      leftCol: clarifaiFace.left_col * width,
-      topRow: clarifaiFace.top_row * height,
-      rightCol: width - (clarifaiFace.right_col * width),
-      bottomRow: height - (clarifaiFace.bottom_row * height),
-    }
+    const clarifaiFacesArray = data.outputs[0].data.regions;
+    let boxes = [];
+    
+    clarifaiFacesArray.forEach((clarifaiFace) => {
+      const clarifaiFaceBox = clarifaiFace.region_info.bounding_box
+      const width = Number(image.width);
+      const height = Number(image.height);
+      boxes.push({
+        leftCol: clarifaiFaceBox.left_col * width,
+        topRow: clarifaiFaceBox.top_row * height,
+        rightCol: width - (clarifaiFaceBox.right_col * width),
+        bottomRow: height - (clarifaiFaceBox.bottom_row * height),
+      })
+    })
+    return boxes
   }
 
-  displayFaceBox = (box) => {
-    this.setState({box: box})
+  displayFaceBox = (boxes) => {
+    this.setState({boxes: boxes})
   }
 
   onInputChange = (event) => {
@@ -142,7 +148,7 @@ class App extends Component {
 
   onPictureSubmit = () => {
     this.setState({imageUrl: this.state.input}); 
-      fetch('https://limitless-fjord-45877.herokuapp.com/imageurl', {
+      fetch('https://brainiac-backend.adaptable.app/imageurl', {
         method: 'post', 
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
@@ -152,7 +158,7 @@ class App extends Component {
       .then(response => response.json())
       .then(response => {
         if (response) {
-          fetch('https://limitless-fjord-45877.herokuapp.com/image', {
+          fetch('https://brainiac-backend.adaptable.app/image', {
             method: 'put', 
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
@@ -184,7 +190,7 @@ class App extends Component {
   }
 
   render() {
-    const { user, isSignedIn, box, imageUrl, route } = this.state;
+    const { user, isSignedIn, boxes, imageUrl, route } = this.state;
     return ( 
       <div className="App">
         <Particles
@@ -200,7 +206,7 @@ class App extends Component {
               onInputChange={this.onInputChange} 
               onPictureSubmit={this.onPictureSubmit} /> {/* we need the this to access that function 
                                                                   which is a method of the App class  */}
-            <FaceRecognition box={box} imageUrl={imageUrl} /> {/* the way this works is, 
+            <FaceRecognition boxes={boxes} imageUrl={imageUrl} /> {/* the way this works is, 
                                                       here in the App.js container u define these props for
                                                       its children, so u will pass them to the children as 
                                                       props, so they'll be able to access them and use them
