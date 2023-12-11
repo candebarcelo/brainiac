@@ -16,7 +16,7 @@ const particlesOptions = { // config for the react-particles-js package
       value: "none"
     }
   },
-  fpsLimit: 120,
+  fpsLimit: 23,
   interactivity: {
     events: {
       onClick: {
@@ -37,7 +37,7 @@ const particlesOptions = { // config for the react-particles-js package
         size: 40
       },
       push: {
-        quantity: 4
+        quantity: 3
       },
       repulse: {
         distance: 200,
@@ -72,7 +72,7 @@ const particlesOptions = { // config for the react-particles-js package
         enable: true,
         area: 800
       },
-      value: 140
+      value: 80
     },
     opacity: {
       value: 0.5
